@@ -1,0 +1,10 @@
+torchvision
+numpy
+tqdm
+tensorboard
+matplotlib
+
+pandas
+datasets
+librosa
+wandb
