@@ -150,7 +150,7 @@ class Trainer(BaseTrainer):
     def process_batch(self, batch: Batch, metrics: MetricTracker, to_log: bool):
         batch.to(self.device)
         self.optimizer_d.zero_grad()
-        outputs = self.generator(batch, self.device)
+        outputs = self.generator(batch.melspec)
 
         msd_true, _ = self.msd(batch.waveform)
         msd_false, _ = self.msd(outputs.detach())

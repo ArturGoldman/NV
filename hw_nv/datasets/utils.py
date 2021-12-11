@@ -2,8 +2,9 @@ from operator import xor
 
 from torch.utils.data import DataLoader, ConcatDataset
 
+import hw_nv.collate_fn
 from hw_nv.datasets import LJSpeechDataset
-from hw_nv.collate_fn.LJSpeech_collator import LJSpeechCollator
+from hw_nv.collate_fn import LJSpeechCollator
 from hw_nv.utils.parse_config import ConfigParser
 
 
@@ -19,7 +20,7 @@ def get_dataloaders(configs: ConfigParser):
         # create and join datasets
         datasets = []
         for ds in params["datasets"]:
-            datasets.append(LJSpeechDataset(configs, **params["args"]))
+            datasets.append(LJSpeechDataset(configs, **ds["args"]))
         assert len(datasets)
         if len(datasets) > 1:
             dataset = ConcatDataset(datasets)

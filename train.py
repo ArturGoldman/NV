@@ -6,7 +6,6 @@ import itertools
 import numpy as np
 import torch
 
-import hw_nv.loss as module_loss
 import hw_nv.model as module_arch
 from hw_nv.model import MSD, MPD
 from hw_nv.datasets.utils import get_dataloaders

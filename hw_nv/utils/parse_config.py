@@ -6,8 +6,8 @@ from functools import reduce, partial
 from operator import getitem
 from pathlib import Path
 
-from hw_tts.logger import setup_logging
-from hw_tts.utils import read_json, write_json, ROOT_PATH
+from hw_nv.logger import setup_logging
+from hw_nv.utils import read_json, write_json, ROOT_PATH
 
 
 class ConfigParser:
@@ -140,7 +140,7 @@ class ConfigParser:
 
     @classmethod
     def get_default_configs(cls):
-        config_path = ROOT_PATH / 'hw_tts' / 'config.json'
+        config_path = ROOT_PATH / 'hw_nv' / 'config.json'
         with config_path.open() as f:
             return cls(json.load(f))
 
