@@ -6,20 +6,15 @@ class DP(nn.Module):
     def __init__(self, n, leaky_slope=0.1):
         super().__init__()
         self.n = n
-        self.body = []
-        prev_ch = 1
-        cur_ch = 32
-        for i in range(4):
-            self.body += [
-                nn.utils.weight_norm(nn.Conv2d(prev_ch, cur_ch, (5, 1), (3, 1), padding=(2, 0)))
-            ]
-            prev_ch = cur_ch
-            cur_ch *= 4
-        self.body = nn.ModuleList(self.body)
-        self.tail = nn.ModuleList([
-            nn.utils.weight_norm(nn.Conv2d(prev_ch, 1024, (5, 1), 1, padding=(2, 0))),
+        self.body = nn.ModuleList([
+            nn.utils.weight_norm(nn.Conv2d(1, 32, (5, 1), (3, 1), padding=(2, 0))),
+            nn.utils.weight_norm(nn.Conv2d(32, 128, (5, 1), (3, 1), padding=(2, 0))),
+            nn.utils.weight_norm(nn.Conv2d(128, 512, (5, 1), (3, 1), padding=(2, 0))),
+            nn.utils.weight_norm(nn.Conv2d(512, 1024, (5, 1), (3, 1), padding=(2, 0))),
+            nn.utils.weight_norm(nn.Conv2d(1024, 1024, (5, 1), 1, padding=(2, 0))),
             nn.utils.weight_norm(nn.Conv2d(1024, 1, (3, 1), 1, padding=(1, 0)))
         ])
+        self.body = nn.ModuleList(self.body)
         self.leaky_slope = leaky_slope
 
     def forward(self, x):
@@ -33,10 +28,6 @@ class DP(nn.Module):
         x = x.view(b, 1, t//self.n, self.n)
         fmaps = []
         for block in self.body:
-            x = block(x)
-            x = nn.functional.leaky_relu(x, self.leaky_slope)
-            fmaps.append(x)
-        for block in self.tail:
             x = block(x)
             x = nn.functional.leaky_relu(x, self.leaky_slope)
             fmaps.append(x)
