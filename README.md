@@ -9,5 +9,5 @@ To start overfitting in Colab run
 !git clone -b overfit https://github.com/ArturGoldman/NV
 !chmod u+x ./NV/prep.sh
 !./NV/prep.sh
-!python ./NV/train.py -c ./NV/config.json
+!python ./NV/train.py -c ./NV/hw_nv/config.json
 ```
