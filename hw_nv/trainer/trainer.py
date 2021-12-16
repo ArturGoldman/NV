@@ -44,7 +44,7 @@ class Trainer(BaseTrainer):
         self.data_loader = data_loader
         self.val_data_loader = val_data_loader
         self.attentions = None
-        self.melspec = MelSpectrogram(config)
+        self.melspec = MelSpectrogram(config).to(device)
 
         if len_epoch is None:
             # epoch-based training
@@ -91,13 +91,19 @@ class Trainer(BaseTrainer):
                     for p in self.generator.parameters():
                         if p.grad is not None:
                             del p.grad  # free some memory
+                    for p in self.msd.parameters():
+                        if p.grad is not None:
+                            del p.grad  # free some memory
+                    for p in self.mpd.parameters():
+                        if p.grad is not None:
+                            del p.grad  # free some memory
                     torch.cuda.empty_cache()
                     continue
                 else:
                     raise e
             self.train_metrics.update("grad norm g", self.get_grad_norm(self.generator))
-            self.train_metrics.update("grad norm msd", self.get_grad_norm(self.msd))
-            self.train_metrics.update("grad norm mpd", self.get_grad_norm(self.msd))
+            # self.train_metrics.update("grad norm msd", self.get_grad_norm(self.msd))
+            # self.train_metrics.update("grad norm mpd", self.get_grad_norm(self.msd))
             if batch_idx % self.log_step == 0 or (batch_idx + 1 == self.len_epoch and epoch == self.epochs):
                 self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
                 self.logger.debug(
@@ -105,13 +111,14 @@ class Trainer(BaseTrainer):
                         epoch, self._progress(batch_idx), l_disc, l_gen
                     )
                 )
-                self.writer.add_scalar(
-                    "learning rate", self.lr_scheduler_g.get_last_lr()[0]
-                )
+
                 self._log_scalars(self.train_metrics)
             if batch_idx + 1 >= self.len_epoch:
                 break
 
+        self.lr_scheduler_g.step()
+        self.lr_scheduler_d.step()
+        self.writer.add_scalar("learning rate", self.lr_scheduler_g.get_last_lr()[0])
         self._valid_example()
 
         log = self.train_metrics.result()
@@ -122,20 +129,21 @@ class Trainer(BaseTrainer):
     def discriminator_loss(gt: torch.Tensor, pred: torch.Tensor):
         loss = 0
         for i in range(len(gt)):
-            true_p = torch.mean((gt[i]-1)**2)
-            false_p = torch.mean(pred[i]**2)
+            true_p = torch.mean((gt[i] - 1) ** 2)
+            false_p = torch.mean(pred[i] ** 2)
             loss += true_p + false_p
         return loss
 
     def mel_loss(self, pred, batch):
-        pred_mel = self.melspec(pred)
+        pred_mel = self.melspec(pred).squeeze()
+
         return torch.nn.functional.l1_loss(pred_mel, batch.melspec)
 
     @staticmethod
     def generator_loss(pred):
         loss = 0
         for i in range(len(pred)):
-            false_p = torch.mean(pred[i]**2)
+            false_p = torch.mean(pred[i] ** 2)
             loss += false_p
         return loss
 
@@ -144,13 +152,15 @@ class Trainer(BaseTrainer):
         loss = 0
         for a, b in zip(gt, pred):
             for c, d in zip(a, b):
-                loss += torch.mean(torch.abs(c-d))
+                loss += torch.mean(torch.abs(c - d))
         return loss
 
     def process_batch(self, batch: Batch, metrics: MetricTracker, to_log: bool):
         batch.to(self.device)
-        self.optimizer_d.zero_grad()
         outputs = self.generator(batch.melspec)
+        """
+        self.optimizer_d.zero_grad()
+
 
         msd_true, _ = self.msd(batch.waveform)
         msd_false, _ = self.msd(outputs.detach())
@@ -163,11 +173,11 @@ class Trainer(BaseTrainer):
         total_disc_loss = loss_msd + loss_mpd
         total_disc_loss.backward()
         self.optimizer_d.step()
-
+        """
+        total_disc_loss = torch.tensor(0)
         self.optimizer_g.zero_grad()
-
         loss_mel = self.mel_loss(outputs, batch)
-
+        """
         msd_true, msd_true_fmaps = self.msd(batch.waveform)
         msd_false, msd_false_fmaps = self.msd(outputs)
         loss_msd_fmaps = self.fmaps_loss(msd_true_fmaps, msd_false_fmaps)
@@ -178,23 +188,20 @@ class Trainer(BaseTrainer):
 
         loss_gen_msd = self.generator_loss(msd_false)
         loss_gen_mpd = self.generator_loss(mpd_false)
+        """
 
-        total_gen_loss = 45*loss_mel + 2*(loss_msd_fmaps+loss_mpd_fmaps)+loss_gen_msd+loss_gen_mpd
-
+        # total_gen_loss = 45*loss_mel + 2*(loss_msd_fmaps+loss_mpd_fmaps)+loss_gen_msd+loss_gen_mpd
+        total_gen_loss = loss_mel
         total_gen_loss.backward()
         self.optimizer_g.step()
 
-        self.lr_scheduler_g.step()
-        self.lr_scheduler_d.step()
-
         if to_log:
             j = random.randint(0, outputs.size(0) - 1)
-            pred_melspec = self.melspec(outputs[j].detach())
-            self._log_spectrogram("train_pred", pred_melspec)
-            self._log_spectrogram("train_ground_truth", batch.melspec[j])
+            pred_melspec = self.melspec(outputs[j].detach()).squeeze()
+            self._log_spectrogram("train_pred_mel", pred_melspec)
+            self._log_spectrogram("train_ground_truth_mel", batch.melspec[j])
             self._log_audios("train_pred", outputs[j].detach())
             self._log_audios("train_ground_truth", batch.waveform[j])
-
 
         metrics.update("total_disc_loss", total_disc_loss.item())
         metrics.update("total_gen_loss", total_gen_loss.item())
@@ -213,10 +220,10 @@ class Trainer(BaseTrainer):
             for i in range(n_examples):
                 batch = next(iter(self.val_data_loader))
                 batch.to(self.device)
-                outputs = self.generator(batch.waveform)
+                outputs = self.generator(batch.melspec)
                 pred_melspec = self.melspec(outputs[0])
-                self._log_spectrogram("val_pred", pred_melspec)
-                self._log_spectrogram("val_ground_truth", batch.melspec[0])
+                self._log_spectrogram("val_pred_mel", pred_melspec.squeeze())
+                self._log_spectrogram("val_ground_truth_mel", batch.melspec[0])
                 self._log_audios("val_pred", outputs[0].detach())
                 self._log_audios("val_ground_truth", batch.waveform[0])
 

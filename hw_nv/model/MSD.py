@@ -18,14 +18,13 @@ class DS(nn.Module):
         self.leaky_slope = leaky_slope
 
     def forward(self, x):
-        # x: [batch_sz, audio_len] raw audio
-        out = x
+        # x: [batch_sz, 1, audio_len] raw audio
         fmaps = []
         for b in self.body:
-            out = b(out)
-            out = nn.functional.leaky_relu(out, self.leaky_slope)
-            fmaps.append(out)
-        return torch.flatten(out, 1, -1), fmaps
+            x = b(x)
+            x = nn.functional.leaky_relu(x, self.leaky_slope)
+            fmaps.append(x.cpu())
+        return torch.flatten(x, 1, -1).cpu(), fmaps
 
 
 class MSD(nn.Module):

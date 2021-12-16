@@ -1,5 +1,6 @@
 import importlib
 from datetime import datetime
+from torch.utils import tensorboard
 
 
 class TensorboardWriter:
@@ -14,7 +15,10 @@ class TensorboardWriter:
             succeeded = False
             for module in ["torch.utils.tensorboard", "tensorboardX"]:
                 try:
-                    self.writer = importlib.import_module(module).SummaryWriter(log_dir)
+                    if module == "torch.utils.tensorboard":
+                        self.writer = tensorboard.SummaryWriter(log_dir)
+                    else:
+                        self.writer = importlib.import_module(module).SummaryWriter(log_dir)
                     succeeded = True
                     break
                 except ImportError:

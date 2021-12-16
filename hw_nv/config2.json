@@ -13,31 +13,26 @@
     "pad_value": -11.5129251
   },
   "arch": {
-    "type": "FastSpeech",
+    "type": "Generator",
     "args": {
-      "ntoken": 200,
-      "d_model": 384,
-      "nhead": 2,
-      "d_hid": 384,
-      "kernel_sz": 3,
-      "filter_sz": 1536,
-      "dur_pred_filter_sz": 256,
-      "nlayers": 6,
-      "n_mels": 80,
-      "dropout": 0.1,
-      "frame_max": 5000
+      "h": 512,
+      "ku": [16, 16, 4, 4],
+      "kr": [3, 7, 11],
+      "dr": [[[1, 1], [3, 1], [5, 1]], [[1, 1], [3, 1], [5, 1]], [[1, 1], [3, 1], [5, 1]]]
     }
   },
   "data": {
     "train": {
-      "batch_size": 32,
+      "batch_size": 4,
       "num_workers": 5,
       "datasets": [
         {
           "type": "LJSpeechDataset",
           "args": {
+            "segment_size": 8192,
             "root": ".",
-            "to_sr": 22050
+            "to_sr": 22050,
+            "limit": 4
           }
         }
       ],
@@ -55,7 +50,8 @@
           "type": "LJSpeechDataset",
           "args": {
             "root": ".",
-            "to_sr": 22050
+            "to_sr": 22050,
+            "limit": 4
           }
         }
       ],
@@ -67,42 +63,28 @@
     }
   },
   "optimizer": {
-    "type": "Adam",
+    "type": "AdamW",
     "args": {
-      "lr": 1e-3,
-      "betas": [0.9, 0.98],
-      "eps": 1e-9
+      "lr": 2e-4,
+      "betas": [0.8, 0.99]
     }
   },
-  "loss_fs": {
-    "type": "FSLoss",
-    "args": {}
-  },
-  "loss_dp": {
-    "type": "DPLoss",
-    "args": {}
-  },
   "lr_scheduler": {
-    "type": "OneCycleLR",
+    "type": "ExponentialLR",
     "args": {
-      "steps_per_epoch": 400,
-      "epochs": 200,
-      "anneal_strategy": "cos",
-      "max_lr": 1e-3,
-      "pct_start": 0.2
+      "gamma": 0.999
     }
   },
   "trainer": {
-    "epochs": 100,
+    "epochs": 300,
     "save_dir": "saved/",
     "save_period": 25,
     "verbosity": 2,
-    "monitor": "min loss_fs",
+    "monitor": "min total_gen_loss",
     "early_stop": 25,
     "visualize": "wandb",
-    "wandb_project": "TTS-HSE-DLA",
-    "len_epoch": 400,
-    "log_step": 50,
-    "grad_norm_clip": 10
+    "wandb_project": "NV-HSE-DLA",
+    "len_epoch": 100,
+    "log_step": 50
   }
 }

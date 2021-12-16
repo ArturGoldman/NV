@@ -19,7 +19,7 @@ class DP(nn.Module):
 
     def forward(self, x):
         # x: [batch_sz, 1, audio_len] raw audio
-        b, t = x.size()
+        b, _, t = x.size()
         if t % self.n != 0:
             to_pad = self.n - (t % self.n)
             x = nn.functional.pad(x, (0, to_pad), "reflect")
@@ -30,8 +30,8 @@ class DP(nn.Module):
         for block in self.body:
             x = block(x)
             x = nn.functional.leaky_relu(x, self.leaky_slope)
-            fmaps.append(x)
-        return torch.flatten(x, 1, -1), fmaps
+            fmaps.append(x.cpu())
+        return torch.flatten(x, 1, -1).cpu(), fmaps
 
 
 class MPD(nn.Module):

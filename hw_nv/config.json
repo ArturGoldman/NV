@@ -29,6 +29,7 @@
         {
           "type": "LJSpeechDataset",
           "args": {
+            "segment_size": 8192,
             "root": ".",
             "to_sr": 22050,
             "limit": 10

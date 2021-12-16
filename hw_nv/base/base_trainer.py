@@ -16,8 +16,6 @@ class BaseTrainer:
         self.device = device
         self.config = config
         self.logger = config.get_logger("trainer", config["trainer"]["verbosity"])
-
-        self.models = [Generator, MSD, MPD]
         self.generator = Generator
         self.msd = MSD
         self.mpd = MPD
@@ -25,7 +23,6 @@ class BaseTrainer:
         self.optimizer_d = optimiser_d
         self.lr_scheduler_g = lr_scheduler_g
         self.lr_scheduler_d = lr_scheduler_d
-
         # for interrupt saving
         self._last_epoch = 0
 
@@ -190,8 +187,8 @@ class BaseTrainer:
 
         # load optimizer state from checkpoint only when optimizer type is not changed.
         if (
-                checkpoint["config"]["optimizer_g"] != self.config["optimizer"] or
-                checkpoint["config"]["lr_scheduler_g"] != self.config["lr_scheduler"]
+                checkpoint["config"]["optimizer"] != self.config["optimizer"] or
+                checkpoint["config"]["lr_scheduler"] != self.config["lr_scheduler"]
         ):
             self.logger.warning(
                 "Warning: Optimizer or lr_scheduler given in config file is different "
