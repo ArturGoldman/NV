@@ -102,8 +102,8 @@ class Trainer(BaseTrainer):
                 else:
                     raise e
             self.train_metrics.update("grad norm g", self.get_grad_norm(self.generator))
-            # self.train_metrics.update("grad norm msd", self.get_grad_norm(self.msd))
-            # self.train_metrics.update("grad norm mpd", self.get_grad_norm(self.msd))
+            self.train_metrics.update("grad norm msd", self.get_grad_norm(self.msd))
+            self.train_metrics.update("grad norm mpd", self.get_grad_norm(self.msd))
             if batch_idx % self.log_step == 0 or (batch_idx + 1 == self.len_epoch and epoch == self.epochs):
                 self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
                 self.logger.debug(
@@ -158,9 +158,8 @@ class Trainer(BaseTrainer):
     def process_batch(self, batch: Batch, metrics: MetricTracker, to_log: bool):
         batch.to(self.device)
         outputs = self.generator(batch.melspec)
-        """
-        self.optimizer_d.zero_grad()
 
+        self.optimizer_d.zero_grad()
 
         msd_true, _ = self.msd(batch.waveform)
         msd_false, _ = self.msd(outputs.detach())
@@ -173,11 +172,10 @@ class Trainer(BaseTrainer):
         total_disc_loss = loss_msd + loss_mpd
         total_disc_loss.backward()
         self.optimizer_d.step()
-        """
-        total_disc_loss = torch.tensor(0)
+
         self.optimizer_g.zero_grad()
         loss_mel = self.mel_loss(outputs, batch)
-        """
+
         msd_true, msd_true_fmaps = self.msd(batch.waveform)
         msd_false, msd_false_fmaps = self.msd(outputs)
         loss_msd_fmaps = self.fmaps_loss(msd_true_fmaps, msd_false_fmaps)
@@ -188,10 +186,9 @@ class Trainer(BaseTrainer):
 
         loss_gen_msd = self.generator_loss(msd_false)
         loss_gen_mpd = self.generator_loss(mpd_false)
-        """
 
-        # total_gen_loss = 45*loss_mel + 2*(loss_msd_fmaps+loss_mpd_fmaps)+loss_gen_msd+loss_gen_mpd
-        total_gen_loss = loss_mel
+        total_gen_loss = 45 * loss_mel + 2 * (loss_msd_fmaps + loss_mpd_fmaps) + loss_gen_msd + loss_gen_mpd
+        # total_gen_loss = loss_mel
         total_gen_loss.backward()
         self.optimizer_g.step()
 
@@ -226,6 +223,7 @@ class Trainer(BaseTrainer):
                 self._log_spectrogram("val_ground_truth_mel", batch.melspec[0])
                 self._log_audios("val_pred", outputs[0].detach())
                 self._log_audios("val_ground_truth", batch.waveform[0])
+                self.writer.add_text("val_gt_text", " ".join(batch.transcript))
 
     def _progress(self, batch_idx):
         base = "[{}/{} ({:.0f}%)]"

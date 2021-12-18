@@ -23,7 +23,7 @@
   },
   "data": {
     "train": {
-      "batch_size": 10,
+      "batch_size": 16,
       "num_workers": 5,
       "datasets": [
         {
@@ -31,8 +31,7 @@
           "args": {
             "segment_size": 8192,
             "root": ".",
-            "to_sr": 22050,
-            "limit": 10
+            "to_sr": 22050
           }
         }
       ],
@@ -50,8 +49,7 @@
           "type": "LJSpeechDataset",
           "args": {
             "root": ".",
-            "to_sr": 22050,
-            "limit": 10
+            "to_sr": 22050
           }
         }
       ],
@@ -76,15 +74,14 @@
     }
   },
   "trainer": {
-    "epochs": 5,
+    "epochs": 50,
     "save_dir": "saved/",
-    "save_period": 25,
+    "save_period": 10,
     "verbosity": 2,
-    "monitor": "min loss_fs",
+    "monitor": "min total_gen_loss",
     "early_stop": 25,
-    "visualize": "tensorboard",
+    "visualize": "wandb",
     "wandb_project": "NV-HSE-DLA",
-    "len_epoch": 5,
-    "log_step": 5
+    "log_step": 50
   }
 }
