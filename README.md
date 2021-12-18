@@ -33,8 +33,10 @@ Note that after training you will have to pass trained model to test on your own
 Model works great!
 
 Details of training can be found here: https://wandb.ai/artgoldman/NV-HSE-DLA
+It can be seen, that model reaches plato and stays there for a long time. Thus, number of training epochs can be reduced.
 
 Audios sound just as in ground truth.
+
 
 ## Credits
 Structure of this repository is based on [template repository of first ASR homework](https://github.com/WrathOfGrapes/asr_project_template),
