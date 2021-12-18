@@ -54,9 +54,6 @@ class MRF(nn.Module):
         return out / len(self.kr)
 
 
-68
-
-
 class Generator(nn.Module):
     def __init__(self, h, ku, kr, dr, leaky_slope=0.1):
         """
