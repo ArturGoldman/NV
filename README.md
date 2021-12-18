@@ -7,18 +7,19 @@ Implementing [HiFiGAN](https://arxiv.org/pdf/2010.05646.pdf)
 
 All commands are written as if they are executed in Google Colab
 
-To set up environment run
+To set up environment fisrt run
 ```
 !git clone https://github.com/ArturGoldman/NV
 !chmod u+x ./NV/prep.sh
 !./NV/prep.sh
 ```
 
-To start testing run
+After this run
 ```
 !chmod u+x ./NV/test.sh
 ! ./NV/test.sh
 ```
+to start testing.
 
 By default testing audios are specified in `hw_nv/audio_to_test`. If you want to pass you own audios,
 place it in the same directory and provide path to it in `config_test.json` under 'file_dir' field. Then, execute commands above.
