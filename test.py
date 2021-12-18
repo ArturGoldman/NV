@@ -46,12 +46,13 @@ def main(config):
 
     to_test = config["file_dir"]
     fnames = os.listdir(to_test)
-    melspectr = MelSpectrogram(config)
+    melspectr = MelSpectrogram(config).to(device)
     for f in tqdm(fnames):
-        waveform = torchaudio.load(to_test+'/'+f)
+        waveform, old_sr = torchaudio.load(to_test+'/'+f)
+        waveform = torchaudio.transforms.Resample(old_sr, 22050)(waveform).to(device)
         melspec = melspectr(waveform)
         out = model(melspec)
-        torchaudio.save(str(save_path)+'/'+f, out, sample_rate=22050)
+        torchaudio.save(str(save_path)+'/'+f, out.cpu().squeeze(0), sample_rate=22050)
 
     print("Testing: DONE")
 
